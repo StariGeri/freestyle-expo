@@ -1,7 +1,8 @@
 import { ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
+import * as Font from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -51,21 +52,35 @@ const NavThemeDark = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  // Preload icon fonts alongside SpaceMono. Without this, `@expo/vector-icons`
-  // components render as empty tofu glyphs in Expo Go on first render — on
-  // web the browser just lazy-loads the font, but native needs it registered
-  // before any <Ionicons>/<MaterialIcons>/etc. mounts.
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...Ionicons.font,
-    ...MaterialIcons.font,
-    ...MaterialCommunityIcons.font,
-    ...FontAwesome.font,
-    ...Feather.font,
-  });
+  const [fontsReady, setFontsReady] = useState(false);
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
+  // Explicitly load icon fonts before any screen mounts. `useFonts({...Icon.font})`
+  // is documented but on Android + Expo SDK 54 + the new architecture it can
+  // race: `<Ionicons>` renders before the font is registered and the glyphs
+  // come out as tofu. `Font.loadAsync` awaits the actual font-registration
+  // promise, which is reliable.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await Font.loadAsync({
+          SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+          ...Ionicons.font,
+          ...MaterialIcons.font,
+          ...MaterialCommunityIcons.font,
+          ...FontAwesome.font,
+          ...Feather.font,
+        });
+      } finally {
+        if (!cancelled) setFontsReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!fontsReady) {
     return null;
   }
 
