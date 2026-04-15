@@ -4,6 +4,12 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Feather from '@expo/vector-icons/Feather';
+
 import { theme } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
@@ -45,8 +51,17 @@ const NavThemeDark = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  // Preload icon fonts alongside SpaceMono. Without this, `@expo/vector-icons`
+  // components render as empty tofu glyphs in Expo Go on first render — on
+  // web the browser just lazy-loads the font, but native needs it registered
+  // before any <Ionicons>/<MaterialIcons>/etc. mounts.
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    ...Ionicons.font,
+    ...MaterialIcons.font,
+    ...MaterialCommunityIcons.font,
+    ...FontAwesome.font,
+    ...Feather.font,
   });
 
   if (!loaded) {
